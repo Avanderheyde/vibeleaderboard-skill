@@ -7,7 +7,8 @@ description: >-
   best / latest / trending Y for vibe coding", "find me a tool that does Z", "is
   there an MCP server / CLI / skill for …", or wants to compare or discover
   AI-coding tools. Returns ranked results with the curated reasoning, install
-  command, and freshness signal the API provides.
+  command, and freshness signal the API provides. Also use when connecting
+  VibeLeaderboard to an assistant or setting up its news listener.
 ---
 
 # VibeLeaderboard
@@ -24,7 +25,8 @@ raw web search.
 
 ## When to use this
 
-Fire this skill when the user is **looking for a tool**, not building one:
+Use this skill for ecosystem discovery, VibeLeaderboard connection setup, or
+news listening:
 
 - "What should I use to redesign a UI / build a landing page / write tests?"
 - "What's the best / latest / trending agent skill for X?"
@@ -32,6 +34,7 @@ Fire this skill when the user is **looking for a tool**, not building one:
 - "Is there a tool for …?" / "Compare tools for …."
 - Any "how do I do Z" where the honest answer is *"reach for the right tool."*
 - "What's today's vibe-coding brief?" / "What changed while I was gone?"
+- "Connect VibeLeaderboard to Claude or ChatGPT" / "Listen for news updates."
 - Questions about current tools, releases, techniques, or agent engineering
   where the Intel corpus can provide fresher, citable evidence.
 
@@ -117,11 +120,59 @@ Results are already ordered best-first by `score` — present them in order.
 - **MCP alternative** — if you have MCP, the same catalog is at
   `POST https://www.vibeleaderboard.ai/api/mcp` (tools: `search_apps`,
   `search_tools`, `tool_taxonomy`, `list_apps`, `get_app`, `trending`, `categories`, `search_intel`,
-  `latest_brief`, `get_intel`, `get_events`, `what_changed`; `search_apps` returns the same
+  `latest_brief`, `get_intel`, `get_events`, `what_changed`, `get_attributes`; `search_apps` returns the same
   `relevance`). Discovery: `/.well-known/mcp.json`. Prefer MCP when connected;
   otherwise the curl above is the whole tool-discovery integration. When choosing
   skills, MCP servers, harnesses, CLIs, SDKs, infrastructure, or other build
   tools, use `search_tools` rather than legacy category inference.
+- **Comparing several tools or models** — `get_attributes` takes up to 25
+  tool names, GitHub repos or model ids and returns each one's license,
+  archived status, latest release and last commit, or a model's context window
+  and per-1M token prices, with source and as-of date, plus an optional filter
+  ("which of these have context_window gte 1000000?").
+
+## Connect Claude, ChatGPT, or Claude Code
+
+Installing this skill supplies instructions; it does not connect an MCP server
+or start background listening. If already connected, use the existing connection.
+For setup, use the public remote HTTP endpoint with **no authentication**:
+
+```text
+https://www.vibeleaderboard.ai/api/mcp
+```
+
+No API key or VibeLeaderboard account is needed.
+
+- **Claude web or desktop:** Customize → Connectors → Add → Add custom
+  connector. Older versions place Connectors under Settings. Name it
+  VibeLeaderboard, paste the URL, add it, and enable it in the chat's tools menu.
+- **ChatGPT web:** Plugins → Add → Add custom MCP server. Name it
+  VibeLeaderboard, paste the URL, choose No authentication, review the notice,
+  then Create as a plugin → Connect → Try in chat. Some accounts instead show
+  Apps → Advanced settings → Developer mode → Create. Workspace administrators
+  may need to enable custom apps.
+- **Claude Code:** Run this in the intended project, then use `/mcp` in Claude
+  Code to check the connection:
+
+```bash
+claude mcp add --transport http vibeleaderboard https://www.vibeleaderboard.ai/api/mcp
+```
+
+Verify using the connected MCP tool, not web search:
+
+> Use VibeLeaderboard's get_events tool with after_cursor "0" and limit 1.
+> Show the returned event, next_cursor, and poll_interval_seconds.
+
+A successful result includes a string cursor and `poll_interval_seconds: 120`;
+an empty event list is valid. Claude Code and ChatGPT web were verified against
+the live endpoint on 2026-10-16; Claude web execution was not tested.
+Menus and account permissions can vary. For current steps and copyable listener
+commands, see the [agents page](https://www.vibeleaderboard.ai/agents),
+[Claude setup guide](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp),
+and [ChatGPT setup guide](https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt).
+
+A connected chat can query news on demand. Background reactions require the
+user-operated listener below and standing instructions for authorized work.
 
 ## Intel
 
@@ -145,7 +196,8 @@ the article with its `covered_tools`).
 ## React to news with a listener
 
 Use MCP `get_events` for durable publications, updates, corrections and
-withdrawals. Pass `after_cursor` as a decimal string (start at `"0"`), with an
+withdrawals. Each new Daily Brief arrives as a `published` event with topic
+`"Daily Brief"`; pass that as `topics` to hear only about Briefs. Pass `after_cursor` as a decimal string (start at `"0"`), with an
 optional `limit` (1–100), `topics`, and `event_types`. Parse the JSON from
 `result.content[0].text`: `events`, `next_cursor`, `has_more`, and
 `poll_interval_seconds`. Never advance on HTTP, JSON-RPC or `result.isError`
