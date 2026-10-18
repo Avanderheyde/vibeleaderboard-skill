@@ -20,12 +20,16 @@ maintained/freshness signal.
   `how_to_install`, `agent_ready` flags, and a `maintained` signal.
 - Falls back to `/top` for trending, `/apps/{id}` for detail + intel articles,
   and the MCP server at `POST /api/mcp` when connected.
-- Uses the 12 anonymous MCP tools for taxonomy-aware discovery, Intel search,
+- Uses the 13 anonymous MCP tools for taxonomy-aware discovery, Intel search,
   briefs, ecosystem changes, and the durable `get_events` feed.
 - Explains how a user-operated listener can resume from a saved cursor and
   dispatch news events to an authorized agent workflow.
 
 ## Install
+
+```bash
+npx skills add Avanderheyde/vibeleaderboard-skill -g
+```
 
 ### As a Claude Code skill
 
@@ -33,7 +37,7 @@ Drop `SKILL.md` into a folder named for the skill under your skills directory:
 
 ```bash
 mkdir -p ~/.claude/skills/vibeleaderboard
-curl -sL https://www.vibeleaderboard.ai/skill/vibeleaderboard/SKILL.md \
+curl -fsSL https://raw.githubusercontent.com/Avanderheyde/vibeleaderboard-skill/main/SKILL.md \
   -o ~/.claude/skills/vibeleaderboard/SKILL.md
 ```
 
@@ -43,14 +47,25 @@ to use for something.
 
 ### Raw download
 
-The canonical, always-current copy is served at:
+The version installed from this repository is available at:
 
 ```
-https://www.vibeleaderboard.ai/skill/vibeleaderboard/SKILL.md
+https://raw.githubusercontent.com/Avanderheyde/vibeleaderboard-skill/main/SKILL.md
 ```
 
-It's also listed in the skills manifest at
+The website also publishes a skill copy, listed in its manifest at
 `https://www.vibeleaderboard.ai/.well-known/agent-skills/index.json`.
+
+## Connect your assistant
+
+The installed [skill includes Claude, ChatGPT, and Claude Code setup](SKILL.md#connect-claude-chatgpt-or-claude-code),
+plus a prompt to verify `get_events` against the live server. Use
+`https://www.vibeleaderboard.ai/api/mcp` with HTTP and no authentication;
+no API key or VibeLeaderboard account is needed.
+
+The [agents page](https://www.vibeleaderboard.ai/agents) provides the same
+connection flow with copyable commands. Connecting a chat enables on-demand
+queries. To react to news in the background, run the listener below.
 
 ## Listen for news
 
